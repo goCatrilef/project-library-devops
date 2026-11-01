@@ -192,8 +192,8 @@ jobs:
       - name: Construir imágenes en GitHub Actions
         run: APP_VERSION="$GITHUB_SHA" docker compose build
 
-      - name: Levantar stack temporal
-        run: APP_VERSION="$GITHUB_SHA" APP_PORT=18080 docker compose up -d --no-build
+      - name: Levantar stack temporal (2 réplicas del backend)
+        run: APP_VERSION="$GITHUB_SHA" APP_PORT=18080 BACKEND_REPLICAS=2 docker compose up -d --no-build
 
       - name: Esperar y probar aplicación
         shell: bash
@@ -209,6 +209,19 @@ jobs:
           done
           echo "La aplicación no respondió."
           exit 1
+          
+      - name: Verificar escalabilidad (2 réplicas sanas)
+        run: |
+          for i in $(seq 1 12); do
+            SANAS=$(docker ps -q \
+              --filter "label=com.docker.compose.service=backend" \
+              --filter "health=healthy" | wc -l)
+            echo "Réplicas backend sanas: $SANAS / 2 (intento $i/12)"
+            [ "$SANAS" -eq 2 ] && break
+            sleep 5
+          done
+          docker compose ps
+          test "$SANAS" -eq 2
 
       - name: Mostrar logs si falla el smoke test
         if: failure()
