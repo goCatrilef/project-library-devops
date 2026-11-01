@@ -35,13 +35,13 @@ services:
     container_name: minibiblioteca-frontend
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-80}:80"
+      - "${APP_PORT:-80}:8080"
     depends_on:
       backend:
         condition: service_healthy
     # Healthcheck del frontend: Docker sabe si Nginx realmente responde.
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ >/dev/null || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
